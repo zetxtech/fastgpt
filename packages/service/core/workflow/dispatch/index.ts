@@ -46,7 +46,7 @@ import { WorkflowVariableState } from './utils/variables';
 import { getHandleId } from '@fastgpt/global/core/workflow/utils';
 import { callbackMap } from './constants';
 import { getUserChatInfo } from '../../../support/user/team/utils';
-import { checkTeamAIPoints } from '../../../support/permission/teamLimit';
+import { checkTeamAIPoints, checkMemberUsageLimit } from '../../../support/permission/teamLimit';
 import type { UsageSourceEnum } from '@fastgpt/global/support/wallet/usage/constants';
 import { createChatUsageRecord, pushChatItemUsage } from '../../../support/wallet/usage/controller';
 import type { RequireOnlyOne } from '@fastgpt/global/common/type/utils';
@@ -210,6 +210,7 @@ export async function dispatchWorkFlow({
   /* Init function */
   // Check point
   await checkTeamAIPoints(runningUserInfo.teamId);
+  await checkMemberUsageLimit({ teamId: runningUserInfo.teamId, tmbId: runningUserInfo.tmbId });
 
   const {
     fileContext,

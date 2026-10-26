@@ -11,6 +11,21 @@ import LanguageMenuItems from '@/pageComponents/chat/LanguageSelector/LanguageMe
 import { useChatLanguageSwitch } from '@/pageComponents/chat/LanguageSelector/useChatLanguageSwitch';
 import { useSystem } from '@fastgpt/web/hooks/useSystem';
 import PhoneDrawer from '@fastgpt/web/components/common/PhoneDrawer';
+import UsageLimitTooltipContent from '@/components/support/user/team/UsageLimitTooltipContent';
+import { useSelfUsageLimit } from '@/web/support/user/team/useSelfUsageLimit';
+
+/** Remaining usage limit of the current member, shown in the avatar menu. */
+const UsageLimitBlock = () => {
+  const { data } = useSelfUsageLimit();
+
+  if (!data) return null;
+
+  return (
+    <Box px={2} py={1}>
+      <UsageLimitTooltipContent data={data} />
+    </Box>
+  );
+};
 
 type UserAvatarPopoverProps = {
   isCollapsed: boolean;
@@ -65,6 +80,10 @@ const UserAvatarPopover = ({
           onClose={onClose}
           bodyProps={{ display: 'flex', flexDirection: 'column', gap: 3 }}
         >
+          <UsageLimitBlock />
+
+          <Box borderTop="1px solid" borderColor="myGray.150" w="100%" />
+
           <LanguageMenuItems
             currentLang={currentLang}
             variant="mobileList"
@@ -110,7 +129,7 @@ const UserAvatarPopover = ({
         }
         trigger="hover"
         placement={placement}
-        w="178px"
+        w="248px"
         {...props}
       >
         {({ onClose }) => (
@@ -132,6 +151,10 @@ const UserAvatarPopover = ({
                 </Box>
               </Flex>
             )}
+
+            <UsageLimitBlock />
+
+            <Box borderTop="1px solid" borderColor="myGray.100" w="100%" />
 
             <LanguageMenuItems
               currentLang={currentLang}

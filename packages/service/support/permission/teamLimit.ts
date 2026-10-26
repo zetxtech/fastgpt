@@ -6,9 +6,12 @@ import { TeamErrEnum } from '@fastgpt/global/common/error/code/team';
 import { SystemErrEnum } from '@fastgpt/global/common/error/code/system';
 import { AppTypeEnum, ToolTypeList, AppFolderTypeList } from '@fastgpt/global/core/app/constants';
 import { MongoTeamMember } from '../user/team/teamMemberSchema';
+import { MongoMemberUsageLimit } from '../user/team/memberUsageLimitSchema';
+import { MongoUsage } from '../wallet/usage/schema';
 import { TeamMemberStatusEnum } from '@fastgpt/global/support/user/team/constant';
 import { getVectorCountByTeamId } from '../../common/vectorDB/controller';
 import { serviceEnv } from '../../env';
+import { Types } from 'mongoose';
 
 export const checkTeamAIPoints = async (teamId: string) => {
   if (!global.subPlans?.standard) return;
@@ -22,6 +25,93 @@ export const checkTeamAIPoints = async (teamId: string) => {
   return {
     totalPoints,
     usedPoints
+  };
+};
+
+type UsageStats = {
+  total: number;
+  monthly: number;
+  daily: number;
+};
+
+const getMemberUsageStats = async (tmbId: string): Promise<UsageStats> => {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tmbObjectId = new Types.ObjectId(tmbId);
+
+  const sumPoints = async (match: Record<string, any>) => {
+    const result = await MongoUsage.aggregate([
+      { $match: { ...match, tmbId: tmbObjectId } },
+      { $group: { _id: null, total: { $sum: '$totalPoints' } } }
+    ]);
+    return result[0]?.total || 0;
+  };
+
+  const [total, monthly, daily] = await Promise.all([
+    sumPoints({ totalPoints: { $gt: 0 } }),
+    sumPoints({ time: { $gte: monthStart }, totalPoints: { $gt: 0 } }),
+    sumPoints({ time: { $gte: dayStart }, totalPoints: { $gt: 0 } })
+  ]);
+
+  return { total, monthly, daily };
+};
+
+export const checkMemberUsageLimit = async ({
+  teamId,
+  tmbId
+}: {
+  teamId: string;
+  tmbId: string;
+}) => {
+  const limit = await MongoMemberUsageLimit.findOne({ teamId, tmbId });
+
+  if (!limit || !limit.enabled) return;
+
+  const usage = await getMemberUsageStats(tmbId);
+
+  const exceedMessage = (label: string, used: number, max: number) =>
+    new Error(
+      `您已达到成员${label}用量限额（${used}/${max}），如需继续使用请联系管理员`
+    );
+
+  /**
+   * null 为无限额，不校验；0 表示禁用，任何用量都已超出；正数为额度上限。
+   */
+  const isExceeded = (used: number, max?: number | null) => max !== undefined && max !== null && used >= max;
+
+  if (limit.mode === 'total') {
+    if (isExceeded(usage.total, limit.totalLimit)) {
+      return Promise.reject(exceedMessage('', usage.total, limit.totalLimit ?? 0));
+    }
+  } else {
+    if (isExceeded(usage.monthly, limit.monthlyLimit)) {
+      return Promise.reject(exceedMessage('月度', usage.monthly, limit.monthlyLimit ?? 0));
+    }
+    if (isExceeded(usage.daily, limit.dailyLimit)) {
+      return Promise.reject(exceedMessage('今日', usage.daily, limit.dailyLimit ?? 0));
+    }
+  }
+};
+
+export const getMemberUsageLimitInfo = async ({
+  teamId,
+  tmbId
+}: {
+  teamId: string;
+  tmbId: string;
+}) => {
+  const limit = await MongoMemberUsageLimit.findOne({ teamId, tmbId });
+  if (!limit || !limit.enabled) return;
+
+  const usage = await getMemberUsageStats(tmbId);
+
+  return {
+    mode: limit.mode,
+    totalLimit: limit.totalLimit ?? null,
+    monthlyLimit: limit.monthlyLimit ?? null,
+    dailyLimit: limit.dailyLimit ?? null,
+    usage
   };
 };
 

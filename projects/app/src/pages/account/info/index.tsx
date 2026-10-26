@@ -74,6 +74,12 @@ const EnterpriseAuthStatusRow = dynamic(
 const ModelPriceModal = dynamic(() =>
   import('@/components/core/ai/ModelTable').then((mod) => mod.ModelPriceModal)
 );
+const MemberUsageLimitCard = dynamic(
+  () => import('@/pageComponents/account/info/MemberUsageLimitView'),
+  {
+    loading: () => null
+  }
+);
 
 const Info = () => {
   const { isPc } = useSystem();
@@ -91,6 +97,9 @@ const Info = () => {
               <Box mt={6}>
                 <Other onOpenContact={onOpenContact} />
               </Box>
+              <Box mt={6}>
+                <MemberUsageLimitCard />
+              </Box>
             </Box>
             {!!standardPlan && (
               <Box ml={'45px'} flex={'1'} maxW={'600px'}>
@@ -103,6 +112,9 @@ const Info = () => {
             <MyInfo onOpenContact={onOpenContact} />
             {standardPlan && <PlanUsage />}
             <Other onOpenContact={onOpenContact} />
+            <Box mt={6}>
+              <MemberUsageLimitCard />
+            </Box>
           </>
         )}
       </Box>

@@ -32,6 +32,7 @@ const MyIconButton = ({
         color={'myGray.500'}
         rounded={'sm'}
         alignItems={'center'}
+        justifyContent={'center'}
         bg={'transparent'}
         transition={'background 0.1s'}
         cursor={'pointer'}

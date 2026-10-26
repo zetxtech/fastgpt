@@ -22,6 +22,7 @@ import { ChatPageContext, ChatPageContextProvider } from '@/web/core/chat/contex
 import ChatAllApp from '@/pageComponents/chat/ChatAllApp';
 import { useUserStore } from '@/web/support/user/useUserStore';
 import { MongoOutLink } from '@fastgpt/service/support/outLink/schema';
+import { TokenName } from '@fastgpt/service/support/permission/auth/common';
 import { getLogger, LogCategories } from '@fastgpt/service/common/logger';
 import { PublishChannelEnum } from '@fastgpt/global/support/outLink/constant';
 import type { LoginSuccessResponseType } from '@fastgpt/global/openapi/support/user/account/login/api';
@@ -296,7 +297,7 @@ export default Render;
 
 export async function getServerSideProps(context: any) {
   const appId = context?.query?.appId || '';
-  const shouldInitUserInfo = !!context.req?.cookies?.fastgpt_token;
+  const shouldInitUserInfo = !!context.req?.cookies?.[TokenName];
 
   const chatQuoteReaderConfig = await (async () => {
     try {

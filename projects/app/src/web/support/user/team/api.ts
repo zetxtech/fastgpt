@@ -12,7 +12,10 @@ import type {
 import type {
   TeamTmbItemType,
   TeamMemberItemType,
-  TeamMemberSchema
+  TeamMemberSchema,
+  MemberUsageLimitItemType,
+  MemberUsageLimitBody,
+  MemberUsageLimitSelfType
 } from '@fastgpt/global/support/user/team/type';
 import type {
   ClientTeamPlanStatusType,
@@ -96,6 +99,14 @@ export const updateOneMemberPermission = (data: {
 }) => PUT('/proApi/support/user/team/collaborator/updateOne', data);
 export const deleteMemberPermission = (id: DeletePermissionQuery) =>
   DELETE('/proApi/support/user/team/collaborator/delete', id);
+
+/* -------------- team member usage limit ---------------- */
+export const getMemberUsageLimitList = (searchKey?: string) =>
+  GET<MemberUsageLimitItemType[]>(`/support/user/team/memberUsageLimit/list`, { searchKey });
+export const setMemberUsageLimit = (data: MemberUsageLimitBody) =>
+  POST(`/support/user/team/memberUsageLimit/set`, data);
+export const getSelfUsageLimit = () =>
+  GET<MemberUsageLimitSelfType>(`/support/user/team/memberUsageLimit/self`);
 
 /* team limit */
 export const checkTeamExportDatasetLimit = (datasetId: string) =>

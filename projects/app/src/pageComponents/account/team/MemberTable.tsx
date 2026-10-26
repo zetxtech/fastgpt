@@ -20,7 +20,8 @@ import {
   delRemoveMember,
   getTeamMembers,
   putUpdateMemberNameByManager,
-  postRestoreMember
+  postRestoreMember,
+  getMemberUsageLimitList
 } from '@/web/support/user/team/api';
 import Tag from '@fastgpt/web/components/common/Tag';
 import { useContextSelector } from 'use-context-selector';
@@ -41,6 +42,8 @@ import SearchInput from '@fastgpt/web/components/common/Input/SearchInput';
 import { useCallback, useState, useMemo } from 'react';
 import { downloadFetch, getIsMemberSyncMode } from '@/web/common/system/utils';
 import { type TeamMemberItemType } from '@fastgpt/global/support/user/team/type';
+import { type MemberUsageLimitItemType } from '@fastgpt/global/support/user/team/type';
+import { MemberUsageLimitModeEnum } from '@fastgpt/global/support/user/team/type';
 import { useToast } from '@fastgpt/web/hooks/useToast';
 import MyBox from '@fastgpt/web/components/common/MyBox';
 import { useScrollPagination } from '@fastgpt/web/hooks/useScrollPagination';
@@ -52,6 +55,10 @@ import MyIconButton from '@fastgpt/web/components/common/Icon/button';
 
 const InviteModal = dynamic(() => import('./Invite/InviteModal'));
 const TransferOwnershipModal = dynamic(() => import('./TransferOwnershipModal'));
+const MemberUsageLimitModal = dynamic(
+  () => import('./MemberUsageLimitModal'),
+  { loading: () => null }
+);
 
 function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
   const { t } = useClientTranslation(['account_team', 'user']);
@@ -171,6 +178,31 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
           status: 'error'
         });
       }
+    });
+  };
+
+  // Member usage limit
+  const [limitMember, setLimitMember] = useState<MemberUsageLimitItemType>();
+  const {
+    data: usageLimits = [],
+    refresh: refetchUsageLimits
+  } = useRequest(() => getMemberUsageLimitList(), {
+    manual: false,
+    throttleWait: 500
+  });
+  const openUsageLimitModal = async (member: TeamMemberItemType) => {
+    const memberLimits = usageLimits;
+    const limit = memberLimits.find((item) => item.tmbId === member.tmbId);
+    setLimitMember({
+      tmbId: member.tmbId,
+      memberName: member.memberName,
+      avatar: member.avatar,
+      mode: (limit?.mode as MemberUsageLimitModeEnum) ?? MemberUsageLimitModeEnum.total,
+      totalLimit: limit?.totalLimit || 0,
+      monthlyLimit: limit?.monthlyLimit || 0,
+      dailyLimit: limit?.dailyLimit || 0,
+      enabled: !!limit?.enabled,
+      usage: limit?.usage || { total: 0, monthly: 0, daily: 0 }
     });
   };
 
@@ -321,12 +353,20 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
                         member.role !== TeamMemberRoleEnum.owner &&
                         member.tmbId !== userInfo?.team.tmbId &&
                         (member.status === TeamMemberStatusEnum.active ? (
-                          <HStack>
+                          <HStack spacing={2}>
                             <MyIconButton
                               icon={'edit'}
                               size="1rem"
+                              boxSize={'1.5rem'}
                               hoverColor={'blue.500'}
                               onClick={() => handleEditMemberName(member.tmbId, member.memberName)}
+                            />
+                            <MyIconButton
+                              icon={'common/setting'}
+                              size="1rem"
+                              boxSize={'1.5rem'}
+                              hoverColor={'primary.500'}
+                              onClick={() => openUsageLimitModal(member)}
                             />
                             <PopoverConfirm
                               Trigger={
@@ -336,6 +376,7 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
                                     hoverColor={'red.500'}
                                     hoverBg="red.50"
                                     size={'1rem'}
+                                    boxSize={'1.5rem'}
                                   />
                                 </Box>
                               }
@@ -355,10 +396,11 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
                         ) : (
                           <PopoverConfirm
                             Trigger={
-                              <Box display={'inline-block'}>
+                              <Box display={'inline-flex'}>
                                 <MyIconButton
                                   icon={'common/confirm/restoreTip'}
                                   size={'1rem'}
+                                  boxSize={'1.5rem'}
                                   hoverColor={'primary.500'}
                                 />
                               </Box>
@@ -389,6 +431,13 @@ function MemberTable({ Tabs }: { Tabs: React.ReactNode }) {
             initUserInfo();
             refetchMemberList();
           }}
+        />
+      )}
+      {limitMember && (
+        <MemberUsageLimitModal
+          member={limitMember}
+          onClose={() => setLimitMember(undefined)}
+          onSuccess={refetchUsageLimits}
         />
       )}
     </>

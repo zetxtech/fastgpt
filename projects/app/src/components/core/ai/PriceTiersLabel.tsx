@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Flex, Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import type { ModelPriceTierType, PriceType } from '@fastgpt/global/core/ai/model.schema';
+import { getRuntimeResolvedPriceTiers } from '@fastgpt/global/core/ai/pricing';
 import MyTooltip from '@fastgpt/web/components/common/MyTooltip';
 
 const getTierLowerBoundLabel = (tier: ModelPriceTierType) => String(tier.minInputTokens ?? 0);
@@ -204,6 +205,24 @@ const TierTooltip = ({
   </MyTooltip>
 );
 
+/** Floating price panel: input/output summary plus the tier breakdown when a model has several tiers. */
+export const PriceDetail = ({ config, unitLabel }: { config: PriceType; unitLabel: string }) => {
+  const tiers = getRuntimeResolvedPriceTiers(config);
+  if (tiers.length === 0) return null;
+
+  return (
+    <Box minW={'210px'}>
+      <SummaryLine tiers={tiers} priceKey={'input'} unitLabel={unitLabel} fontSize={'sm'} />
+      <SummaryLine tiers={tiers} priceKey={'output'} unitLabel={unitLabel} fontSize={'sm'} />
+      {tiers.length > 1 && (
+        <Box mt={2}>
+          <TierBreakdownTable tiers={tiers} />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 export const PriceLine = React.memo(
   ({
     config,
@@ -218,7 +237,7 @@ export const PriceLine = React.memo(
     fontSize?: string;
     color?: string;
   }) => {
-    const tiers = config.priceTiers || [];
+    const tiers = getRuntimeResolvedPriceTiers(config);
     if (tiers.length === 0) return <Box>-</Box>;
     return (
       <TierTooltip tiers={tiers} color={color}>
@@ -229,7 +248,7 @@ export const PriceLine = React.memo(
 );
 
 const PriceTiersLabel = ({ config, unitLabel }: { config: PriceType; unitLabel: string }) => {
-  const tiers = config.priceTiers || [];
+  const tiers = getRuntimeResolvedPriceTiers(config);
   if (tiers.length === 0) return <Box>-</Box>;
   return (
     <TierTooltip tiers={tiers} color={'myGray.700'}>

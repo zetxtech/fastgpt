@@ -26,6 +26,7 @@ import { isChatFileAllowedBySelectConfig } from '../utils/file';
 import ComplianceTip from '@/components/common/ComplianceTip/index';
 import { useToast } from '@fastgpt/web/hooks/useToast';
 import VoiceInput, { type VoiceInputComponentRef } from './VoiceInput';
+import UsageLimitIndicator from './UsageLimitIndicator';
 import MyBox from '@fastgpt/web/components/common/MyBox';
 import type { WorkflowInteractiveResponseType } from '@fastgpt/global/core/workflow/template/system/interactive/type';
 import { ChatGenerateStatusEnum, ChatSourceTypeEnum } from '@fastgpt/global/core/chat/constants';
@@ -380,6 +381,7 @@ const ChatInput = ({
 
         {/* 右侧原有按钮组 */}
         <Flex alignItems={'center'} gap={[0, 1]}>
+          <UsageLimitIndicator />
           {/* Attachment and Voice Group */}
           <Flex alignItems={'center'} h={9}>
             {/* file selector button */}

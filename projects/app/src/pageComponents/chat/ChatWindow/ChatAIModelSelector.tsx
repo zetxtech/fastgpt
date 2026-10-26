@@ -9,6 +9,8 @@ import MultipleRowSelect from '@fastgpt/web/components/common/MySelect/MultipleR
 import MyTooltip from '@fastgpt/web/components/common/MyTooltip';
 import TestModeBetaTag from '@/components/core/ai/TestModeBetaTag';
 import MultimodalTag from '@/components/core/ai/MultimodelTag';
+import ModelPriceTooltip, { ModelPriceInline } from '@/components/core/ai/ModelPriceTooltip';
+import { useSystem } from '@fastgpt/web/hooks/useSystem';
 import { useRequest } from '@fastgpt/web/hooks/useRequest';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useMemo } from 'react';
@@ -45,15 +47,21 @@ const ModelOptionLabel = React.memo(function ModelOptionLabel({
   name,
   showTestModeTip,
   showMultimodalTip,
-  noOfLines
+  noOfLines,
+  model,
+  unitLabel
 }: {
   name: string;
   showTestModeTip: boolean;
   showMultimodalTip?: boolean;
   noOfLines?: ResponsiveValue<number>;
+  model?: SystemModelItemType;
+  unitLabel?: string;
 }) {
-  return (
-    <Flex alignItems={'center'} gap={1} flex={'1 1 0'} w={'100%'} minW={0} overflow={'hidden'}>
+  const { isPc } = useSystem();
+
+  const nameContent = (
+    <>
       <Box noOfLines={noOfLines ?? 1} flex={'1 1 0'} minW={0} overflow={'hidden'}>
         {name}
       </Box>
@@ -67,6 +75,24 @@ const ModelOptionLabel = React.memo(function ModelOptionLabel({
           <MultimodalTag />
         </Box>
       )}
+    </>
+  );
+
+  if (isPc || !model || !unitLabel) {
+    return (
+      <Flex alignItems={'center'} gap={1} flex={'1 1 0'} w={'100%'} minW={0} overflow={'hidden'}>
+        {nameContent}
+      </Flex>
+    );
+  }
+
+  return (
+    <Flex direction={'column'} alignItems={'flex-start'} flex={'1 1 auto'} w={'100%'} minW={0}>
+      {/* No `flex: 1 1 0` here: along a column axis it resolves to zero height and hides the name. */}
+      <Flex alignItems={'center'} gap={1} w={'100%'} minW={0} overflow={'hidden'}>
+        {nameContent}
+      </Flex>
+      <ModelPriceInline model={model} unitLabel={unitLabel} />
     </Flex>
   );
 });
@@ -150,6 +176,8 @@ const OneRowSelector = ({
     [allModels, props.value]
   );
 
+  const priceUnitLabel = `${t('common:support.wallet.subscription.point')} / 1K Tokens`;
+
   const avatarList = useMemo(() => {
     return list
       .map((item) => {
@@ -163,20 +191,24 @@ const OneRowSelector = ({
         return {
           value: item.value,
           label: (
-            <Flex alignItems={'center'} gap={2} py={1} w={'100%'} minW={0}>
-              <Avatar
-                borderRadius={'0'}
-                src={avatar || HUGGING_FACE_ICON}
-                w={avatarSize}
-                fallbackSrc={HUGGING_FACE_ICON}
-              />
-              <ModelOptionLabel
-                name={modelData.name}
-                noOfLines={noOfLines}
-                showTestModeTip={isTestModeModel(modelData)}
-                showMultimodalTip={isMultimodalEmbeddingModel(modelData)}
-              />
-            </Flex>
+            <ModelPriceTooltip model={modelData} unitLabel={priceUnitLabel}>
+              <Flex alignItems={'center'} gap={2} py={1} w={'100%'} minW={0}>
+                <Avatar
+                  borderRadius={'0'}
+                  src={avatar || HUGGING_FACE_ICON}
+                  w={avatarSize}
+                  fallbackSrc={HUGGING_FACE_ICON}
+                />
+                <ModelOptionLabel
+                  name={modelData.name}
+                  noOfLines={noOfLines}
+                  model={modelData}
+                  unitLabel={priceUnitLabel}
+                  showTestModeTip={isTestModeModel(modelData)}
+                  showMultimodalTip={isMultimodalEmbeddingModel(modelData)}
+                />
+              </Flex>
+            </ModelPriceTooltip>
           )
         };
       })
@@ -184,7 +216,7 @@ const OneRowSelector = ({
       value: any;
       label: React.JSX.Element;
     }[];
-  }, [allModels, list, getModelProvider, avatarSize, noOfLines, myModels]);
+  }, [allModels, list, getModelProvider, avatarSize, noOfLines, myModels, priceUnitLabel]);
 
   return (
     <Box
@@ -280,6 +312,8 @@ const MultipleRowSelector = ({
     [selectedModelData]
   );
 
+  const priceUnitLabel = `${t('common:support.wallet.subscription.point')} / 1K Tokens`;
+
   const selectorList = useMemo(() => {
     const renderList = getModelProviders(i18n.language).map<{
       label: React.JSX.Element;
@@ -310,20 +344,24 @@ const MultipleRowSelector = ({
 
       provider?.children.push({
         label: (
-          <Flex w={'100%'} minW={0}>
-            <ModelOptionLabel
-              name={modelData.name}
-              showTestModeTip={isTestModeModel(modelData)}
-              showMultimodalTip={isMultimodalEmbeddingModel(modelData)}
-            />
-          </Flex>
+          <ModelPriceTooltip model={modelData} unitLabel={priceUnitLabel}>
+            <Flex w={'100%'} minW={0}>
+              <ModelOptionLabel
+                name={modelData.name}
+                model={modelData}
+                unitLabel={priceUnitLabel}
+                showTestModeTip={isTestModeModel(modelData)}
+                showMultimodalTip={isMultimodalEmbeddingModel(modelData)}
+              />
+            </Flex>
+          </ModelPriceTooltip>
         ),
         value: modelData.model
       });
     }
 
     return renderList.filter((item) => item.children.length > 0);
-  }, [getModelProviders, i18n.language, avatarSize, list, modelList]);
+  }, [getModelProviders, i18n.language, avatarSize, priceUnitLabel, list, modelList]);
 
   const onSelect = useCallback(
     (e: string[]) => {

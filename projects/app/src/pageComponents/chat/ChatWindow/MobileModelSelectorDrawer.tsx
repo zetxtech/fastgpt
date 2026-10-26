@@ -8,6 +8,7 @@ import type { LLMModelItemType } from '@fastgpt/global/core/ai/model.schema';
 import { useSystemStore } from '@/web/common/system/useSystemStore';
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@fastgpt/web/hooks/useRequest';
+import { ModelPriceInline } from '@/components/core/ai/ModelPriceTooltip';
 
 type Props = {
   isOpen: boolean;
@@ -18,8 +19,9 @@ type Props = {
 };
 
 const MobileModelSelectorDrawer = ({ isOpen, modelList, value, onChange, onClose }: Props) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { getModelProviders, getModelProvider, getMyModelList } = useSystemStore();
+  const priceUnitLabel = `${t('common:support.wallet.subscription.point')} / 1K Tokens`;
   const { data: myModels } = useRequest(getMyModelList, { manual: false });
   const availableModelList = useMemo(
     () => {
@@ -175,7 +177,7 @@ const MobileModelSelectorDrawer = ({ isOpen, modelList, value, onChange, onClose
                     return (
                       <Flex
                         key={model.model}
-                        h="44px"
+                        minH="44px"
                         alignItems="center"
                         px="8px"
                         py="4px"
@@ -186,9 +188,12 @@ const MobileModelSelectorDrawer = ({ isOpen, modelList, value, onChange, onClose
                           onClose();
                         }}
                       >
-                        <Box flex="1" color={isSelected ? 'primary.600' : 'myGray.900'}>
-                          {model.name}
-                        </Box>
+                        <Flex direction="column" alignItems="flex-start" flex="1" minW={0}>
+                          <Box color={isSelected ? 'primary.600' : 'myGray.900'}>
+                            {model.name}
+                          </Box>
+                          <ModelPriceInline model={model} unitLabel={priceUnitLabel} />
+                        </Flex>
                         {isSelected && (
                           <MyIcon name="check" w="24px" h="24px" color="myGray.700" />
                         )}

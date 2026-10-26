@@ -66,6 +66,78 @@ export const TeamTmbItemSchema = ThidPartyAccountSchema.extend({
 });
 export type TeamTmbItemType = z.infer<typeof TeamTmbItemSchema>;
 
+export enum MemberUsageLimitModeEnum {
+  total = 'total',
+  monthly = 'monthly'
+}
+
+export const MemberUsageLimitModeMap: Record<
+  MemberUsageLimitModeEnum,
+  { label: string; value: MemberUsageLimitModeEnum }
+> = {
+  [MemberUsageLimitModeEnum.total]: {
+    label: 'account_team:usage_limit_total_mode',
+    value: MemberUsageLimitModeEnum.total
+  },
+  [MemberUsageLimitModeEnum.monthly]: {
+    label: 'account_team:usage_limit_monthly_mode',
+    value: MemberUsageLimitModeEnum.monthly
+  }
+};
+
+/** null = unlimited, 0 = blocked, > 0 = the spending cap. */
+export type MemberUsageLimitSchema = {
+  _id: string;
+  teamId: string;
+  tmbId: string;
+  mode: MemberUsageLimitModeEnum;
+  totalLimit: number | null;
+  monthlyLimit: number | null;
+  dailyLimit: number | null;
+  enabled: boolean;
+  createTime: Date;
+  updateTime: Date;
+};
+
+export type MemberUsageLimitItemType = {
+  _id?: string;
+  tmbId: string;
+  memberName: string;
+  avatar: string;
+  mode: MemberUsageLimitModeEnum;
+  totalLimit: number | null;
+  monthlyLimit: number | null;
+  dailyLimit: number | null;
+  enabled: boolean;
+  usage: {
+    total: number;
+    monthly: number;
+    daily: number;
+  };
+};
+
+export type MemberUsageLimitSelfType = {
+  enabled: boolean;
+  mode: MemberUsageLimitModeEnum;
+  totalLimit: number | null;
+  monthlyLimit: number | null;
+  dailyLimit: number | null;
+  usage: {
+    total: number;
+    monthly: number;
+    daily: number;
+  };
+};
+
+export type MemberUsageLimitBody = {
+  tmbId: string;
+  mode: MemberUsageLimitModeEnum;
+  totalLimit?: number | null;
+  monthlyLimit?: number | null;
+  dailyLimit?: number | null;
+  enabled: boolean;
+};
+
 export type TeamMemberItemType<
   Options extends {
     withPermission?: boolean;
